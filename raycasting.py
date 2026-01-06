@@ -15,6 +15,9 @@ class RayCasting:
         for ray, values in enumerate(self.ray_casting_result):
             depth, proj_height, texture, offset = values
 
+            if texture not in self.textures:
+                texture = 1
+            
             if proj_height < HEIGHT:
                 wall_column = self.textures[texture].subsurface(
                     offset * (TEXTURE_SIZE - SCALE), 0, SCALE, TEXTURE_SIZE
@@ -40,6 +43,7 @@ class RayCasting:
 
         ray_angle = self.game.player.angle - HALF_FOV + 0.0001
         for ray in range(NUM_RAYS):
+            texture_vert, texture_hor = 1, 1
             sin_a = math.sin(ray_angle)
             cos_a = math.cos(ray_angle)
 

@@ -28,6 +28,12 @@ class ObjectRenderer:
     def game_over(self):
         self.screen.blit(self.game_over_image, (0, 0))
 
+    def draw_stuck_screen(self):
+        self.screen.fill('black')
+        font = pg.font.SysFont('arial', 50)
+        text = font.render('STUCK! RESPAWNING...', True, 'red')
+        self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2))
+
     def draw_player_health(self):
         health = str(self.game.player.health)
         for i, char in enumerate(health):

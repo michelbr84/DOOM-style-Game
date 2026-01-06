@@ -114,6 +114,29 @@ class Player:
         self.movement()
         self.mouse_control()
         self.recover_health()
+        self.check_stuck()
+
+    def check_stuck(self):
+        # Check if current integer position is inside a wall
+        if self.map_pos in self.game.map.world_map:
+            # Player is stuck inside a wall
+            self.game.object_renderer.draw_stuck_screen()
+            pg.display.flip()
+            pg.time.delay(1000)
+            self.respawn()
+
+    def respawn(self):
+        # Find a valid floor tile
+        import random
+        attempts = 0
+        while attempts < 100:
+            c = random.randint(1, self.game.map.cols - 2)
+            r = random.randint(1, self.game.map.rows - 2)
+            if (c, r) not in self.game.map.world_map:
+                self.x, self.y = c + 0.5, r + 0.5
+                break
+            attempts += 1
+        print(f"Respawned at {self.x}, {self.y}")
 
     @property
     def pos(self):

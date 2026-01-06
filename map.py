@@ -15,54 +15,60 @@ class Map:
         self.generate_map()
 
     def generate_map(self):
-        # Initialize full walls
-        self.mini_map = [[1] * self.cols for _ in range(self.rows)]
-        
-        rooms = []
-        max_rooms = 10
-        room_min_size = 3
-        room_max_size = 8
-        
-        for _ in range(30): # Attempt 30 times to place rooms
-            w = random.randint(room_min_size, room_max_size)
-            h = random.randint(room_min_size, room_max_size)
-            x = random.randint(1, self.cols - w - 1)
-            y = random.randint(1, self.rows - h - 1)
+        # Retry loop to ensure valid map
+        while True:
+            # Initialize full walls
+            self.mini_map = [[1] * self.cols for _ in range(self.rows)]
             
-            new_room = pg.Rect(x, y, w, h)
+            rooms = []
+            max_rooms = 15
+            room_min_size = 4
+            room_max_size = 8
             
-            failed = False
-            for other_room in rooms:
-                if new_room.colliderect(other_room.inflate(2, 2)): # Pad to avoid touching rooms
-                    failed = True
-                    break
-            
-            if not failed:
-                # Carve room
-                for i in range(new_room.x, new_room.x + new_room.w):
-                    for j in range(new_room.y, new_room.y + new_room.h):
-                        if 0 < i < self.cols and 0 < j < self.rows:
-                             self.mini_map[j][i] = _
+            attempts = 0
+            # Try to place rooms until max reached or too many attempts
+            while len(rooms) < max_rooms and attempts < 200:
+                attempts += 1
+                w = random.randint(room_min_size, room_max_size)
+                h = random.randint(room_min_size, room_max_size)
+                x = random.randint(1, self.cols - w - 1)
+                y = random.randint(1, self.rows - h - 1)
                 
-                # Connect to previous room (if any)
-                if rooms:
-                    prev_room = rooms[-1]
-                    new_center = new_room.center
-                    prev_center = prev_room.center
+                new_room = pg.Rect(x, y, w, h)
+                
+                failed = False
+                for other_room in rooms:
+                    if new_room.colliderect(other_room.inflate(2, 2)): # Pad to avoid touching rooms
+                        failed = True
+                        break
+                
+                if not failed:
+                    # Carve room
+                    for i in range(new_room.x, new_room.x + new_room.w):
+                        for j in range(new_room.y, new_room.y + new_room.h):
+                            if 0 < i < self.cols and 0 < j < self.rows:
+                                 self.mini_map[j][i] = _
                     
-                    # Horizontal tunnel
-                    x1, x2 = min(prev_center[0], new_center[0]), max(prev_center[0], new_center[0])
-                    for i in range(x1, x2 + 1):
-                        self.mini_map[prev_center[1]][i] = _
+                    # Connect to previous room (if any)
+                    if rooms:
+                        prev_room = rooms[-1]
+                        new_center = new_room.center
+                        prev_center = prev_room.center
                         
-                    # Vertical tunnel
-                    y1, y2 = min(prev_center[1], new_center[1]), max(prev_center[1], new_center[1])
-                    for j in range(y1, y2 + 1):
-                        self.mini_map[j][new_center[0]] = _
-                        
-                rooms.append(new_room)
-                if len(rooms) >= max_rooms:
-                    break
+                        # Horizontal tunnel
+                        x1, x2 = min(prev_center[0], new_center[0]), max(prev_center[0], new_center[0])
+                        for i in range(x1, x2 + 1):
+                            self.mini_map[prev_center[1]][i] = _
+                            
+                        # Vertical tunnel
+                        y1, y2 = min(prev_center[1], new_center[1]), max(prev_center[1], new_center[1])
+                        for j in range(y1, y2 + 1):
+                            self.mini_map[j][new_center[0]] = _
+                            
+                    rooms.append(new_room)
+                    
+            if len(rooms) >= 5: # Ensure at least 5 rooms
+                break
                     
         # Populate world_map
         self.world_map = {}
@@ -70,6 +76,7 @@ class Map:
             for i, value in enumerate(row):
                 if value:
                     self.world_map[(i, j)] = value
+        print("World Map Values:", set(self.world_map.values()))
                     
         if rooms:
             # Player in first room center

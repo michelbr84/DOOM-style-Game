@@ -83,6 +83,7 @@ class ObjectHandler:
         ex, ey = self.game.map.exit_pos
         if int(px) == int(ex) and int(py) == int(ey):
             self.game.object_renderer.win()
+            self.game.score_manager.add_win(self.game.username)
             pg.display.flip()
             pg.time.delay(1500)
             self.game.new_game()

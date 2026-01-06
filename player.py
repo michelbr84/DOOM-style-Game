@@ -29,6 +29,7 @@ class Player:
     def check_game_over(self):
         if self.health < 1:
             self.game.object_renderer.game_over()
+            self.game.score_manager.add_loss(self.game.username)
             pg.display.flip()
             pg.time.delay(1500)
             self.game.new_game()

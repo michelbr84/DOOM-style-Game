@@ -157,9 +157,13 @@ class Game:
         seed_text = font.render(f"SEED: {self.seed_val}", True, 'green')
         name_text = font.render(f"USER: {self.username}", True, 'green')
         
+        stats = self.score_manager.get_score(self.username)
+        score_text = font.render(f"WINS: {stats['wins']} | LOSSES: {stats['losses']}", True, 'green')
+        
         self.screen.blit(fps_text, (10, 10))
         self.screen.blit(seed_text, (10, 30))
         self.screen.blit(name_text, (10, 50))
+        self.screen.blit(score_text, (10, 70))
 
     def update(self):
         if not self.paused:

@@ -16,7 +16,7 @@ class ObjectHandler:
         self.npc_positions = {}
 
         # spawn npc
-        self.enemies = 20  # npc count
+        self.enemies = 1  # npc count
         self.npc_types = [SoldierNPC, CacoDemonNPC, CyberDemonNPC]
         self.weights = [70, 20, 10]
         self.spawn_npc()
@@ -92,6 +92,34 @@ class ObjectHandler:
         [sprite.update() for sprite in self.sprite_list]
         [npc.update() for npc in self.npc_list]
         self.check_win()
+        self.check_enemy_spawn()
+
+    def check_enemy_spawn(self):
+        # Timer logic could be frame-based or time-based. Let's use simple frame counter or just low prob
+        # Or better, use pg.time.get_ticks()
+        # Initialize timer if not exists
+        if not hasattr(self, 'last_spawn_time'):
+            self.last_spawn_time = pg.time.get_ticks()
+            self.spawn_interval = 5000 # 5 seconds
+            
+        now = pg.time.get_ticks()
+        if now - self.last_spawn_time > self.spawn_interval:
+            self.last_spawn_time = now
+            if len([n for n in self.npc_list if n.alive]) < 30: # Max enemies
+                self.spawn_single_enemy()
+
+    def spawn_single_enemy(self):
+        npc_class = choices(self.npc_types, self.weights)[0]
+        # Attempt to find valid spot
+        for _ in range(10): 
+            pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
+            # Check valid: not wall, not player pos
+            if (pos not in self.game.map.world_map) and (pos != self.game.map.player_spawn_pos):
+                # Also check distance from player so it doesn't spawn on top
+                px, py = self.game.player.map_pos
+                if (x-px)**2 + (y-py)**2 > 25: # At least 5 units away behaviorally
+                    self.add_npc(npc_class(self.game, pos=(x + 0.5, y + 0.5)))
+                    break
 
     def add_npc(self, npc):
         self.npc_list.append(npc)

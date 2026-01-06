@@ -18,62 +18,68 @@ class Map:
         # Initialize full walls
         self.mini_map = [[1] * self.cols for _ in range(self.rows)]
         
-        # Random walker setup
-        # Start in the middle
-        cx, cy = self.cols // 2, self.rows // 2
-        self.mini_map[cy][cx] = _ # Start is empty
+        rooms = []
+        max_rooms = 10
+        room_min_size = 3
+        room_max_size = 8
         
-        floor_tiles = {(cx, cy)}
-        walkers = [(cx, cy)]
-        max_floors = int(self.rows * self.cols * 0.4) # Target 40% empty space
-        
-        iterations = 0
-        while len(floor_tiles) < max_floors and iterations < 5000:
-            iterations += 1
-            # Pick a random walker
-            wx, wy = random.choice(walkers)
+        for _ in range(30): # Attempt 30 times to place rooms
+            w = random.randint(room_min_size, room_max_size)
+            h = random.randint(room_min_size, room_max_size)
+            x = random.randint(1, self.cols - w - 1)
+            y = random.randint(1, self.rows - h - 1)
             
-            # Move random direction
-            dx, dy = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0)])
-            nx, ny = wx + dx, wy + dy
+            new_room = pg.Rect(x, y, w, h)
             
-            # Check bounds (leave 1 tile border)
-            if 1 < nx < self.cols - 2 and 1 < ny < self.rows - 2:
-                if self.mini_map[ny][nx] == 1:
-                    self.mini_map[ny][nx] = _
-                    floor_tiles.add((nx, ny))
-                    walkers.append((nx, ny))
-                    # Occasionally remove old walkers to keep it growing outward
-                    if len(walkers) > 10 and random.random() < 0.2:
-                       walkers.pop(0) 
-                else:
-                    # If already floor, change walker pos
-                    pass
-
+            failed = False
+            for other_room in rooms:
+                if new_room.colliderect(other_room.inflate(2, 2)): # Pad to avoid touching rooms
+                    failed = True
+                    break
+            
+            if not failed:
+                # Carve room
+                for i in range(new_room.x, new_room.x + new_room.w):
+                    for j in range(new_room.y, new_room.y + new_room.h):
+                        if 0 < i < self.cols and 0 < j < self.rows:
+                             self.mini_map[j][i] = _
+                
+                # Connect to previous room (if any)
+                if rooms:
+                    prev_room = rooms[-1]
+                    new_center = new_room.center
+                    prev_center = prev_room.center
+                    
+                    # Horizontal tunnel
+                    x1, x2 = min(prev_center[0], new_center[0]), max(prev_center[0], new_center[0])
+                    for i in range(x1, x2 + 1):
+                        self.mini_map[prev_center[1]][i] = _
+                        
+                    # Vertical tunnel
+                    y1, y2 = min(prev_center[1], new_center[1]), max(prev_center[1], new_center[1])
+                    for j in range(y1, y2 + 1):
+                        self.mini_map[j][new_center[0]] = _
+                        
+                rooms.append(new_room)
+                if len(rooms) >= max_rooms:
+                    break
+                    
         # Populate world_map
         self.world_map = {}
-        floor_list = list(floor_tiles)
-        
-        if not floor_list: # Fallback shouldn't happen but safety
-             floor_list = [(cx, cy)]
-        
-        # Set player spawn at the first floor tile generated (usually center)
-        # or just pick a random one
-        self.player_spawn_pos = (cx + 0.5, cy + 0.5)
-        
-        # Find exit position - furthest from player would be nice, but random is okay for now
-        # Let's pick a random floor tile that is far from center
-        possible_exits = [pos for pos in floor_list if ((pos[0]-cx)**2 + (pos[1]-cy)**2) > 50]
-        if not possible_exits:
-            possible_exits = floor_list
-        exit_tile = random.choice(possible_exits)
-        self.exit_pos = exit_tile
-        
-        # Generate walls dict
         for j, row in enumerate(self.mini_map):
             for i, value in enumerate(row):
                 if value:
                     self.world_map[(i, j)] = value
+                    
+        if rooms:
+            # Player in first room center
+            self.player_spawn_pos = (rooms[0].centerx + 0.5, rooms[0].centery + 0.5)
+            # Exit in last room center
+            self.exit_pos = (rooms[-1].centerx, rooms[-1].centery)
+        else:
+             # Fallback if generation fails completely (unlikely)
+             self.player_spawn_pos = (1.5, 1.5)
+             self.exit_pos = (2.5, 2.5)
 
     def draw(self):
         [pg.draw.rect(self.game.screen, 'darkgray', (pos[0] * 100, pos[1] * 100, 100, 100), 2)

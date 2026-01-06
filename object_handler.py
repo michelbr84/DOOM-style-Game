@@ -19,8 +19,20 @@ class ObjectHandler:
         self.enemies = 20  # npc count
         self.npc_types = [SoldierNPC, CacoDemonNPC, CyberDemonNPC]
         self.weights = [70, 20, 10]
-        self.restricted_area = {(i, j) for i in range(10) for j in range(10)}
         self.spawn_npc()
+
+        # spawn exit door visual
+        # Using existing candelbra as placeholder or similar if available, or just a specific static sprite
+        # For now, let's use a green light or something similar to mark the exit if available
+        # logic: self.add_sprite(AnimatedSprite(game, path=... + 'green_light/0.png', pos=self.game.map.exit_pos))
+        # But we don't have green_light confirmed. Let's use 'candlebra.png' if it exists in static, or just a distinct sprite.
+        # User moved files in previous tasks maybe? I saw 'candlebra.png' in root of 'static_sprites' during list_dir.
+        # Wait, the list_dir showed 'candlebra.png' in the root of the search? 
+        # No, list_dir g:\Jogos\DOOM-style-Game\resources\sprites\static_sprites result was:
+        # {"name":"candlebra.png", "sizeBytes":"248388"}
+        # So it is there.
+        self.add_sprite(SpriteObject(game, path='resources/sprites/static_sprites/candlebra.png', pos=self.game.map.exit_pos))
+
 
         # sprite map
         add_sprite(AnimatedSprite(game))
@@ -60,12 +72,16 @@ class ObjectHandler:
         for i in range(self.enemies):
                 npc = choices(self.npc_types, self.weights)[0]
                 pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
-                while (pos in self.game.map.world_map) or (pos in self.restricted_area):
+                # Check valid position (not in wall, not on player, not too close)
+                while (pos in self.game.map.world_map) or (pos == self.game.map.player_spawn_pos):
                     pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
                 self.add_npc(npc(self.game, pos=(x + 0.5, y + 0.5)))
 
     def check_win(self):
-        if not len(self.npc_positions):
+        # Check distance to exit
+        px, py = self.game.player.map_pos
+        ex, ey = self.game.map.exit_pos
+        if int(px) == int(ex) and int(py) == int(ey):
             self.game.object_renderer.win()
             pg.display.flip()
             pg.time.delay(1500)

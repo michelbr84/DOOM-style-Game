@@ -12,6 +12,41 @@ from sound import *
 from pathfinding import *
 
 
+import random
+
+class Menu:
+    def __init__(self, game):
+        self.game = game
+        self.screen = game.screen
+        self.font = pg.font.SysFont('arial', 40)
+        self.text_input = ''
+        
+    def draw(self):
+        self.screen.fill('black')
+        title_surf = self.font.render('ENTER SEED', True, 'white')
+        input_surf = self.font.render(self.text_input + '_', True, 'yellow')
+        self.screen.blit(title_surf, (WIDTH // 2 - title_surf.get_width() // 2, HEIGHT // 2 - 100))
+        self.screen.blit(input_surf, (WIDTH // 2 - input_surf.get_width() // 2, HEIGHT // 2))
+        pg.display.flip()
+        
+    def run(self):
+        input_active = True
+        while input_active:
+            for event in pg.event.get():
+                if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+                    pg.quit()
+                    sys.exit()
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_RETURN:
+                        input_active = False
+                    elif event.key == pg.K_BACKSPACE:
+                        self.text_input = self.text_input[:-1]
+                    else:
+                        if len(self.text_input) < 10:
+                            self.text_input += event.unicode
+            self.draw()
+        return self.text_input
+
 class Game:
     def __init__(self):
         pg.init()
@@ -23,6 +58,28 @@ class Game:
         self.global_trigger = False
         self.global_event = pg.USEREVENT + 0
         pg.time.set_timer(self.global_event, 40)
+        
+        # Show Menu first
+        self.menu = Menu(self)
+        pg.mouse.set_visible(True) # Show mouse for menu if needed (not strictly needed but good practice)
+        pg.event.set_grab(False)
+        seed_val = self.menu.run()
+        
+        # Determine seed
+        if not seed_val:
+            seed_val = random.randint(0, 10000) # Default random if empty
+        
+        try:
+             # Try to interpret as int for consistency, else string
+             seed_val = int(seed_val)
+        except ValueError:
+             pass # Keep as string
+             
+        random.seed(seed_val)
+        print(f"Game starting with seed: {seed_val}")
+        
+        pg.mouse.set_visible(False)
+        pg.event.set_grab(True)
         self.new_game()
 
     def new_game(self):
